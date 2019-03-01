@@ -2,8 +2,10 @@ package com.github.almoskvin.urlshortener.model;
 
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import javax.validation.constraints.NotNull;
 import java.util.Date;
 
 @Document
@@ -12,16 +14,25 @@ public class UrlLinker {
     @Id
     private String id;
 
-    private String shortUrl;
+    /**
+     * Alias (short URL)
+     */
+    @Indexed(unique = true)
+    @NotNull(message = "Alias for URL must not be null")
+    private String alias;
 
-    private String longUrl;
+    /**
+     * Original link
+     */
+    @NotNull(message = "URL must not be null")
+    private String link;
 
     @CreatedDate
     private Date createdDate;
 
-    public UrlLinker(String shortUrl, String longUrl) {
-        this.shortUrl = shortUrl;
-        this.longUrl = longUrl;
+    public UrlLinker(String alias, String link) {
+        this.alias = alias;
+        this.link = link;
     }
 
     public String getId() {
@@ -32,20 +43,20 @@ public class UrlLinker {
         this.id = id;
     }
 
-    public String getShortUrl() {
-        return shortUrl;
+    public String getAlias() {
+        return alias;
     }
 
-    public void setShortUrl(String shortUrl) {
-        this.shortUrl = shortUrl;
+    public void setAlias(String alias) {
+        this.alias = alias;
     }
 
-    public String getLongUrl() {
-        return longUrl;
+    public String getLink() {
+        return link;
     }
 
-    public void setLongUrl(String longUrl) {
-        this.longUrl = longUrl;
+    public void setLink(String link) {
+        this.link = link;
     }
 
     public Date getCreatedDate() {
