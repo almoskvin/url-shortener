@@ -12,4 +12,6 @@ public interface UrlShortenerRepository extends MongoRepository<UrlLinker, Strin
     UrlLinker findFirstByLink(String s);
 
     void deleteUrlLinkerByAlias(String s);
+
+    Boolean existsByAlias(String s);
 }

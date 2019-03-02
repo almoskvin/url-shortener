@@ -7,16 +7,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.net.URL;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
@@ -31,10 +25,10 @@ public class UrlShortenerServiceTest {
     @InjectMocks
     private UrlShortenerService urlShortenerService;
 
-    UrlLinker mockLinker;
+    private UrlLinker mockLinker;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         mockLinker = new UrlLinker("testAlias", "testLink");
     }
 
@@ -85,5 +79,11 @@ public class UrlShortenerServiceTest {
     public void testFindByAliasWhenLinkerDoesNotExist() {
         when(urlShortenerRepository.findByAlias(anyString())).thenReturn(null);
         assertNull(urlShortenerService.findByAlias("wrongAlias"));
+    }
+
+    @Test
+    public void testExistsByAlias() {
+        when(urlShortenerRepository.existsByAlias(anyString())).thenReturn(true);
+        assertTrue(urlShortenerService.existsByAlias("testAlias"));
     }
 }

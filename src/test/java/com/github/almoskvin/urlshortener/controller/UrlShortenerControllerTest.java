@@ -9,15 +9,13 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
-
-import static org.junit.Assert.*;
 
 @RunWith(MockitoJUnitRunner.class)
 @WebMvcTest(value = UrlShortenerController.class, secure = false)
 public class UrlShortenerControllerTest {
+
+    //TODO: Write tests for Controller
 
     @Autowired
     private MockMvc mockMvc;
@@ -29,7 +27,7 @@ public class UrlShortenerControllerTest {
     private UrlShortenerController urlShortenerController;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
     }
 
     @Test
@@ -49,7 +47,6 @@ public class UrlShortenerControllerTest {
     }
 
     @Test
-    public void encode() {
-        System.out.println(urlShortenerController.encode("https://www.springboottutorial.com/unit-testing-for-spring-boot-rest-services"));
+    public void createAlias() {
     }
 }

@@ -2,7 +2,7 @@ package com.github.almoskvin.urlshortener.controller;
 
 import com.github.almoskvin.urlshortener.model.UrlLinker;
 import com.github.almoskvin.urlshortener.service.UrlShortenerService;
-import com.twitter.bijection.codec.Base64;
+import com.google.common.hash.Hashing;
 import org.apache.commons.validator.UrlValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,9 +14,10 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Date;
+import java.util.Random;
 
 @RestController
-@RequestMapping("/")
 public class UrlShortenerController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(UrlShortenerController.class);
@@ -41,42 +42,48 @@ public class UrlShortenerController {
 
     @GetMapping(value = "/{alias}")
     public ModelAndView redirect(@PathVariable String alias) throws ResourceNotFoundException {
-        final String link = urlShortenerService.getLinkByAlias(alias);
-
-        if (link == null) {
+        UrlLinker linker = urlShortenerService.findByAlias(alias);
+        if (linker == null) {
             throw new ResourceNotFoundException();
         }
-        return new ModelAndView("redirect:" + link);
+        //analytics
+        linker.setLastTimeFollowed(new Date());
+        Integer counter = linker.getFollowedTimesCounter();
+        linker.setFollowedTimesCounter(counter == null ? 0 : ++counter);
+        urlShortenerService.save(linker);
+
+        return new ModelAndView("redirect:" + linker.getLink());
     }
 
-    //TODO: post mapping (API call)
-    @PostMapping(path = "/url")
+    @PostMapping(path = "/api/v1/urlLinker")
     public ResponseEntity<?> save(@RequestParam("link") String link) {
         UrlValidator urlValidator = new UrlValidator();
         if (urlValidator.isValid(link)) {
             UrlLinker linker = urlShortenerService.findByLink(link);
             if (linker == null) {
-                //TODO: alias
-//                final String id = Hashing.murmur3_32().hashString(link, StandardCharsets.UTF_8).toString();
-                String alias = "";
-                linker = urlShortenerService.save(new UrlLinker(alias, link));
+                //save a new document so we can get a unique id of it
+                linker = urlShortenerService.save(new UrlLinker(link));
+                //create an alias from the unique id provided by mongo
+                linker.setAlias(createAlias(linker.getId()));
+                //update the document
+                linker = urlShortenerService.save(linker);
             }
             return new ResponseEntity<>(linker, HttpStatus.OK);
         }
         return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     }
 
-    @GetMapping(path = "/url")
+    @GetMapping(path = "/api/v1/urlLinker")
     public ResponseEntity<?> expand(@RequestParam("alias") String alias) {
         UrlLinker linker = urlShortenerService.findByAlias(alias);
         if (linker == null) {
             LOGGER.trace("Cannot find a link for an alias {}", alias);
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-        return new ResponseEntity<UrlLinker>(linker, HttpStatus.FOUND);
+        return new ResponseEntity<>(linker, HttpStatus.FOUND);
     }
 
-    @DeleteMapping("/url")
+    @DeleteMapping("/api/v1/urlLinker")
     public ResponseEntity<?> delete(@RequestParam("alias") String alias) {
         try {
             urlShortenerService.deleteByAlias(alias);
@@ -87,9 +94,23 @@ public class UrlShortenerController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    //TODO:shorten an encoded outcome
-    public String encode(String link) {
-        Base64 codec = new Base64();
-        return codec.encodeBase64URLSafeString(link.getBytes(StandardCharsets.UTF_8));
+    /**
+     * Creates an alias for the incoming string via Google Guava hashing.<br/>
+     * In case if the alias already exists, tries to create an alias for concatenation of
+     * the previous alias and random substring of the incoming string.<br/>
+     * <br/>
+     * For example, for s == "5c7abd7df7e87c53b4fcd613" the method will return an alias like this: "6c7ba25a", if no such record found in a database
+     *
+     * @param s source for an alias
+     * @return String alias
+     */
+    private String createAlias(String s) {
+        //using Google Guava hashing
+        String alias = Hashing.murmur3_32().hashString(s, StandardCharsets.UTF_8).toString();
+        if (urlShortenerService.existsByAlias(alias)) {
+            Random random = new Random();
+            alias = createAlias(alias + s.substring(random.nextInt(s.length())));
+        }
+        return alias;
     }
 }
