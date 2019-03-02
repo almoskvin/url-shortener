@@ -18,23 +18,22 @@ public class UrlShortenerRepositoryTest {
     @Autowired
     private UrlShortenerRepository urlShortenerRepository;
 
-    UrlLinker linker1;
-    UrlLinker linker2;
+    private UrlLinker linker1;
+    private UrlLinker linker2;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         linker1 = new UrlLinker("alias1", "link1");
         linker2 = new UrlLinker("alias2", "link2");
+        urlShortenerRepository.save(linker1);
+        urlShortenerRepository.save(linker2);
+
     }
 
     @Test
     public void testSave() {
-        assertNull(linker1.getId());
-        assertNull(linker2.getId());
-        urlShortenerRepository.save(linker1);
-        urlShortenerRepository.save(linker2);
-        assertNotNull(linker1);
-        assertNotNull(linker2);
+        assertNotNull(linker1.getId());
+        assertNotNull(linker2.getId());
     }
 
     @Test
@@ -57,7 +56,7 @@ public class UrlShortenerRepositoryTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         urlShortenerRepository.delete(linker1);
         urlShortenerRepository.delete(linker2);
     }
