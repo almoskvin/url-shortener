@@ -18,7 +18,6 @@ public class UrlLinker {
      * Alias (short URL)
      */
     @Indexed(unique = true)
-    @NotNull(message = "Alias for URL must not be null")
     private String alias;
 
     /**
@@ -33,6 +32,9 @@ public class UrlLinker {
     private Date lastTimeFollowed;
 
     private Integer followedTimesCounter;
+
+    public UrlLinker() {
+    }
 
     public UrlLinker(String alias, String link) {
         this.alias = alias;

@@ -5,19 +5,22 @@ import com.github.almoskvin.urlshortener.repository.UrlShortenerRepository;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 @SpringBootTest
-public class UrlShortenerServiceTest {
+public class UrlShortenerServiceUnitTest {
 
     @Mock
     private UrlShortenerRepository urlShortenerRepository;
@@ -32,6 +35,61 @@ public class UrlShortenerServiceTest {
         mockLinker = new UrlLinker("testAlias", "testLink");
     }
 
+    @Test
+    public void testWhenGetLinkByAliasCalledThenRepositoryFindByAliasCalled() {
+        urlShortenerService.getLinkByAlias("testAlias");
+
+        ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
+        verify(urlShortenerRepository).findByAlias(argumentCaptor.capture());
+        assertThat(argumentCaptor.getValue(), is("testAlias"));
+    }
+
+    @Test
+    public void testWhenFindByLinkCalledThenRepositoryFindFirstByLinkCalled() {
+        urlShortenerService.findByLink("testLink");
+
+        ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
+        verify(urlShortenerRepository).findFirstByLink(argumentCaptor.capture());
+        assertThat(argumentCaptor.getValue(), is("testLink"));
+    }
+
+    @Test
+    public void testWhenSaveCalledThenRepositorySaveCalled() {
+        urlShortenerService.save(mockLinker);
+
+        ArgumentCaptor<UrlLinker> argumentCaptor = ArgumentCaptor.forClass(UrlLinker.class);
+        verify(urlShortenerRepository).save(argumentCaptor.capture());
+        assertThat(argumentCaptor.getValue(), is(mockLinker));
+    }
+
+    @Test
+    public void testWhenDeleteByAliasCalledThenRepositoryDeleteUrlLinkerByAliasCalled() {
+        urlShortenerService.deleteByAlias("testAlias");
+
+        ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
+        verify(urlShortenerRepository).deleteUrlLinkerByAlias(argumentCaptor.capture());
+        assertThat(argumentCaptor.getValue(), is("testAlias"));
+    }
+
+    @Test
+    public void testWhenFindByAliasCalledThenRepositoryFindByAliasCalled() {
+        urlShortenerService.findByAlias("testAlias");
+
+        ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
+        verify(urlShortenerRepository).findByAlias(argumentCaptor.capture());
+        assertThat(argumentCaptor.getValue(), is("testAlias"));
+    }
+
+    @Test
+    public void testWhenExistsByAliasCalledThenRepositoryExistByAliasCalled() {
+        urlShortenerService.existsByAlias("testAlias");
+
+        ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
+        verify(urlShortenerRepository).existsByAlias(argumentCaptor.capture());
+        assertThat(argumentCaptor.getValue(), is("testAlias"));
+    }
+
+    //
     @Test
     public void testGetLinkByAliasWhenLinkerExists() {
         when(urlShortenerRepository.findByAlias("testAlias")).thenReturn(mockLinker);
@@ -61,12 +119,7 @@ public class UrlShortenerServiceTest {
     @Test
     public void testSave() {
         when(urlShortenerRepository.save(any(UrlLinker.class))).thenReturn(mockLinker);
-        assertEquals(mockLinker, urlShortenerService.save(mockLinker));
-    }
-
-    @Test
-    public void testDeleteByAlias() {
-        //do nothing
+        assertEquals(mockLinker, urlShortenerService.save(new UrlLinker()));
     }
 
     @Test
