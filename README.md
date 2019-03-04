@@ -1,9 +1,9 @@
-#REST API implementation for short URL creation
+# REST API implementation for short URL creation
 
 This implementation generates short URLs for an instance URL specified in `instance.url` application property.
 It uses an ID provided by MongoDB to generate a short hash string via Google Guava `Hashing.murmur3_32()` method.
 
-##Configuration
+## Configuration
 
 This project uses MongoDB as a data storage, so an instance of MongoDB server must be specified in application properties.<br/>
 Default values are:
@@ -20,8 +20,8 @@ URL of a current application instance must be specified as well (`http://localho
 
 For example, if the application runs with a property `instance.url=https://your.in/`, then it will generate short URLs like this `https://your.in/3h4jhg5k`
 
-##Actions
-###Create
+## Actions
+### Create
 **POST request, param `link` is required**
 
 To shorten the URL <https://duckduckgo.com/?q=anchorage+daily+news>, send the following request:
@@ -46,7 +46,7 @@ If successful, the response will look like:
 
 If URL in the `link` param is invalid, the response will be `HTTP 400 (Bad request)`.        
         
-###Redirect
+### Redirect
 
 **GET request**
 
@@ -60,7 +60,7 @@ For example, the following `curl` command could be used for a default instance U
 
 Response will be `HTTP 404` in case the original link for this alias is not found.
 
-###Expand
+### Expand
 
 **GET request, param `alias` is required, param `projection` is optional**
 
@@ -103,7 +103,7 @@ If successful, the response will look like:
     
 In the other case, response will be `HTTP 404`.         
 
-###Delete
+### Delete
 
 **DELETE request, param `alias` is required**
 
@@ -115,5 +115,5 @@ For example, the following `curl` command could be used for a default instance U
 
       curl -X DELETE http://localhost:8080/api/v1/urlLinker?alias=http://localhost:8080/358ee832
 
-If successful, the response will be `HTTP 200`, and `HTTP 404` if the record does not exist.
+If successful, the response will be `HTTP 200`, or `HTTP 404` if the record does not exist.
         
