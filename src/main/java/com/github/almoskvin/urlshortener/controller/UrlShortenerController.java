@@ -1,5 +1,6 @@
 package com.github.almoskvin.urlshortener.controller;
 
+import com.github.almoskvin.urlshortener.AliasGeneratingException;
 import com.github.almoskvin.urlshortener.model.UrlLinker;
 import com.github.almoskvin.urlshortener.service.UrlShortenerService;
 import com.google.common.hash.Hashing;
@@ -7,10 +8,12 @@ import org.apache.commons.validator.UrlValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.nio.charset.StandardCharsets;
@@ -21,24 +24,17 @@ import java.util.Random;
 public class UrlShortenerController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(UrlShortenerController.class);
+    private static final String DEFAULT_INSTANCE_URL = "http://localhost:8080/";
 
     private final UrlShortenerService urlShortenerService;
 
+    private final Environment environment;
+
     @Autowired
-    public UrlShortenerController(UrlShortenerService urlShortenerService) {
+    public UrlShortenerController(UrlShortenerService urlShortenerService, Environment environment) {
         this.urlShortenerService = urlShortenerService;
+        this.environment = environment;
     }
-
-    /*@RequestMapping(value = "/{alias}", method = RequestMethod.GET)
-    public void redirect(@PathVariable String alias, HttpServletResponse response) throws Exception {
-        final String link = urlShortenerService.getLinkByAlias(alias);
-
-        if (link != null) {
-            response.sendRedirect(link);
-        } else {
-            response.sendError(HttpServletResponse.SC_NOT_FOUND);
-        }
-    }*/
 
     @GetMapping(value = "/{alias}")
     public ModelAndView redirect(@PathVariable String alias) throws ResourceNotFoundException {
@@ -49,7 +45,7 @@ public class UrlShortenerController {
         //analytics
         linker.setLastTimeFollowed(new Date());
         Integer counter = linker.getFollowedTimesCounter();
-        linker.setFollowedTimesCounter(counter == null ? 0 : ++counter);
+        linker.setFollowedTimesCounter(++counter);
         urlShortenerService.save(linker);
 
         return new ModelAndView("redirect:" + linker.getLink());
@@ -57,22 +53,27 @@ public class UrlShortenerController {
 
     @PostMapping(path = "/api/v1/urlLinker")
     public ResponseEntity<?> save(@RequestParam("link") String link) {
-        UrlValidator urlValidator = new UrlValidator();
-        if (urlValidator.isValid(link)) {
+        if (isValidUrl(link)) {
             UrlLinker linker = urlShortenerService.findByLink(link);
             if (linker == null) {
                 //save a new document so we can get a unique id of it
                 linker = urlShortenerService.save(new UrlLinker(link));
-                //create an alias from the unique id provided by mongo
-                linker.setAlias(createAlias(linker.getId()));
-                //update the document
-                linker = urlShortenerService.save(linker);
+                try {
+                    //create an alias from the unique id provided by mongo
+                    linker.setAlias(createAlias(linker.getId()));
+                    linker = urlShortenerService.update(linker);
+                } catch (AliasGeneratingException e) {
+                    urlShortenerService.delete(linker);
+                    throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Cannot generate a short link", e);
+                }
             }
+            //TODO: not the full object
             return new ResponseEntity<>(linker, HttpStatus.OK);
         }
         return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     }
 
+    //TODO: additional parameter 'projection=FULL' default NONE -> include analytics fields' values
     @GetMapping(path = "/api/v1/urlLinker")
     public ResponseEntity<?> expand(@RequestParam("alias") String alias) {
         UrlLinker linker = urlShortenerService.findByAlias(alias);
@@ -80,29 +81,25 @@ public class UrlShortenerController {
             LOGGER.trace("Cannot find a link for an alias {}", alias);
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
+        //TODO: not the full object
         return new ResponseEntity<>(linker, HttpStatus.FOUND);
     }
 
     @DeleteMapping("/api/v1/urlLinker")
     public ResponseEntity<?> delete(@RequestParam("alias") String alias) {
-        try {
-            urlShortenerService.deleteByAlias(alias);
-        } catch (Exception e) {
-            LOGGER.error("Cannot delete record by alias " + alias, e);
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        urlShortenerService.deleteByAlias(alias);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
     /**
-     * Creates an alias for the incoming string via Google Guava hashing.<br/>
+     * Creates an ending for an alias for an incoming string via Google Guava hashing.<br/>
      * In case if the alias already exists, tries to create an alias for concatenation of
-     * the previous alias and random substring of the incoming string.<br/>
+     * the previous ending and random substring of the incoming string.<br/>
+     * If the ending is correct, forms a URL from concatenation of a value of the property {instance.url} and the generated ending
      * <br/>
-     * For example, for s == "5c7abd7df7e87c53b4fcd613" the method will return an alias like this: "6c7ba25a", if no such record found in a database
      *
      * @param s source for an alias
-     * @return String alias
+     * @return String alias (https://localhost:8080/b4b65m3k)
      */
     private String createAlias(String s) {
         //using Google Guava hashing
@@ -111,6 +108,19 @@ public class UrlShortenerController {
             Random random = new Random();
             alias = createAlias(alias + s.substring(random.nextInt(s.length())));
         }
+
+        String instanceUrlPropertyValue = environment.getProperty("{instance.url}");
+        String instanceUrl = instanceUrlPropertyValue == null ? DEFAULT_INSTANCE_URL : instanceUrlPropertyValue;
+        alias = instanceUrl + alias;
+
+        if (!isValidUrl(alias)) {
+            throw new AliasGeneratingException("Generated link is invalid. Check {instance.url} property");
+        }
         return alias;
+    }
+
+    private Boolean isValidUrl(String url) {
+        UrlValidator urlValidator = new UrlValidator();
+        return urlValidator.isValid(url) || url.startsWith(DEFAULT_INSTANCE_URL);
     }
 }

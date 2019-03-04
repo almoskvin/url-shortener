@@ -32,6 +32,10 @@ public class UrlShortenerService {
         return urlShortenerRepository.save(linker);
     }
 
+    public UrlLinker update(UrlLinker linker) {
+        return urlShortenerRepository.save(linker);
+    }
+
     public void deleteByAlias(String alias) {
         urlShortenerRepository.deleteUrlLinkerByAlias(alias);
     }
@@ -44,5 +48,9 @@ public class UrlShortenerService {
     @Transactional(readOnly = true)
     public boolean existsByAlias(String alias) {
         return urlShortenerRepository.existsByAlias(alias);
+    }
+
+    public void delete(UrlLinker linker) {
+        urlShortenerRepository.delete(linker);
     }
 }
