@@ -12,6 +12,13 @@ Default values are:
     spring.data.mongodb.host=localhost
     spring.data.mongodb.port=27017
     spring.data.mongodb.database=URL_SHORTENER_DB
+
+If there is no MongoDB instance available, the Docker image can be pulled and run with the following simple commands:
+    
+    docker pull mongo && \
+    docker run --rm --user mongodb -p 27017:27017 --name url-shortener-mongo mongo    
+
+*The mentioned `docker run` configuration must be used for dev&test purposes only!*
     
 URL of a current application instance must be specified as well (`http://localhost:8080/` by default):
 
