@@ -34,15 +34,18 @@ public class UrlLinker {
     private Integer followedTimesCounter;
 
     public UrlLinker() {
+        this.followedTimesCounter = 0;
     }
 
     public UrlLinker(String alias, String link) {
         this.alias = alias;
         this.link = link;
+        this.followedTimesCounter = 0;
     }
 
     public UrlLinker(@NotNull(message = "URL must not be null") String link) {
         this.link = link;
+        this.followedTimesCounter = 0;
     }
 
     public String getId() {
