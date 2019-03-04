@@ -18,13 +18,18 @@ import org.springframework.web.servlet.ModelAndView;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.Map;
 import java.util.Random;
+import java.util.TreeMap;
 
 @RestController
 public class UrlShortenerController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(UrlShortenerController.class);
+
     private static final String DEFAULT_INSTANCE_URL = "http://localhost:8080/";
+    private static final String PROJECTION_FULL = "FULL";
+    private static final String PROJECTION_NONE = "NONE";
 
     private final UrlShortenerService urlShortenerService;
 
@@ -38,7 +43,7 @@ public class UrlShortenerController {
 
     @GetMapping(value = "/{alias}")
     public ModelAndView redirect(@PathVariable String alias) throws ResourceNotFoundException {
-        UrlLinker linker = urlShortenerService.findByAlias(alias);
+        UrlLinker linker = urlShortenerService.findByAlias(getInstanceUrl() + alias);
         if (linker == null) {
             throw new ResourceNotFoundException();
         }
@@ -52,43 +57,62 @@ public class UrlShortenerController {
     }
 
     @PostMapping(path = "/api/v1/urlLinker")
-    public ResponseEntity<?> save(@RequestParam("link") String link) {
+    public ResponseEntity<?> save(@RequestBody UrlLinker initialLinker) {
+        String link = initialLinker.getLink();
         if (isValidUrl(link)) {
             UrlLinker linker = urlShortenerService.findByLink(link);
             if (linker == null) {
                 //save a new document so we can get a unique id of it
                 linker = urlShortenerService.save(new UrlLinker(link));
+                //unexpected troubles with the CreatedDate annotation
+                linker.setCreatedDate(new Date());
                 try {
                     //create an alias from the unique id provided by mongo
                     linker.setAlias(createAlias(linker.getId()));
                     linker = urlShortenerService.update(linker);
                 } catch (AliasGeneratingException e) {
                     urlShortenerService.delete(linker);
-                    throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Cannot generate a short link", e);
+                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Cannot generate a short link", e);
                 }
             }
-            //TODO: not the full object
-            return new ResponseEntity<>(linker, HttpStatus.OK);
+            Map<String, Object> responseMap = new TreeMap<>();
+            responseMap.put("alias", linker.getAlias());
+            responseMap.put("link", linker.getLink());
+            return new ResponseEntity<>(responseMap, HttpStatus.OK);
         }
         return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     }
 
-    //TODO: additional parameter 'projection=FULL' default NONE -> include analytics fields' values
     @GetMapping(path = "/api/v1/urlLinker")
-    public ResponseEntity<?> expand(@RequestParam("alias") String alias) {
+    public ResponseEntity<?> expand(@RequestParam("alias") String alias,
+                                    @RequestParam(value = "projection", required = false, defaultValue = PROJECTION_NONE) String projection) {
         UrlLinker linker = urlShortenerService.findByAlias(alias);
         if (linker == null) {
             LOGGER.trace("Cannot find a link for an alias {}", alias);
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-        //TODO: not the full object
-        return new ResponseEntity<>(linker, HttpStatus.FOUND);
+        Map<String, Object> responseMap = new TreeMap<>();
+        responseMap.put("alias", linker.getAlias());
+        responseMap.put("link", linker.getLink());
+
+        //analytics
+        if (PROJECTION_FULL.equals(projection)) {
+            Map<String, Object> analyticsMap = new TreeMap<>();
+            analyticsMap.put("created", linker.getCreatedDate());
+            analyticsMap.put("lastTimeFollowed", linker.getLastTimeFollowed());
+            analyticsMap.put("followedTimes", linker.getFollowedTimesCounter());
+            responseMap.put("analytics", analyticsMap);
+        }
+        return new ResponseEntity<>(responseMap, HttpStatus.FOUND);
     }
 
     @DeleteMapping("/api/v1/urlLinker")
     public ResponseEntity<?> delete(@RequestParam("alias") String alias) {
-        urlShortenerService.deleteByAlias(alias);
-        return new ResponseEntity<>(HttpStatus.OK);
+        if (urlShortenerService.existsByAlias(alias)) {
+            urlShortenerService.deleteByAlias(alias);
+            return new ResponseEntity<>(HttpStatus.OK);
+        }
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
     /**
@@ -107,16 +131,20 @@ public class UrlShortenerController {
         if (urlShortenerService.existsByAlias(alias)) {
             Random random = new Random();
             alias = createAlias(alias + s.substring(random.nextInt(s.length())));
+        } else {
+            alias = getInstanceUrl() + alias;
         }
 
-        String instanceUrlPropertyValue = environment.getProperty("{instance.url}");
-        String instanceUrl = instanceUrlPropertyValue == null ? DEFAULT_INSTANCE_URL : instanceUrlPropertyValue;
-        alias = instanceUrl + alias;
-
         if (!isValidUrl(alias)) {
+            LOGGER.error("Generated URL {} is invalid", alias);
             throw new AliasGeneratingException("Generated link is invalid. Check {instance.url} property");
         }
         return alias;
+    }
+
+    private String getInstanceUrl() {
+        String instanceUrlPropertyValue = environment.getProperty("{instance.url}");
+        return instanceUrlPropertyValue == null ? DEFAULT_INSTANCE_URL : instanceUrlPropertyValue;
     }
 
     private Boolean isValidUrl(String url) {
