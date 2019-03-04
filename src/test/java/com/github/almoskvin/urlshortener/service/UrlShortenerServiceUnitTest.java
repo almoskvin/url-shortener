@@ -63,12 +63,30 @@ public class UrlShortenerServiceUnitTest {
     }
 
     @Test
+    public void testWhenUpdateCalledThenRepositorySaveCalled() {
+        urlShortenerService.update(mockLinker);
+
+        ArgumentCaptor<UrlLinker> argumentCaptor = ArgumentCaptor.forClass(UrlLinker.class);
+        verify(urlShortenerRepository).save(argumentCaptor.capture());
+        assertThat(argumentCaptor.getValue(), is(mockLinker));
+    }
+
+    @Test
     public void testWhenDeleteByAliasCalledThenRepositoryDeleteUrlLinkerByAliasCalled() {
         urlShortenerService.deleteByAlias("testAlias");
 
         ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
         verify(urlShortenerRepository).deleteUrlLinkerByAlias(argumentCaptor.capture());
         assertThat(argumentCaptor.getValue(), is("testAlias"));
+    }
+
+    @Test
+    public void testWhenDeleteCalledThenRepositoryDeleteCalled() {
+        urlShortenerService.delete(mockLinker);
+
+        ArgumentCaptor<UrlLinker> argumentCaptor = ArgumentCaptor.forClass(UrlLinker.class);
+        verify(urlShortenerRepository).delete(argumentCaptor.capture());
+        assertThat(argumentCaptor.getValue(), is(mockLinker));
     }
 
     @Test
@@ -120,6 +138,12 @@ public class UrlShortenerServiceUnitTest {
     public void testSave() {
         when(urlShortenerRepository.save(any(UrlLinker.class))).thenReturn(mockLinker);
         assertEquals(mockLinker, urlShortenerService.save(new UrlLinker()));
+    }
+
+    @Test
+    public void testUpdate() {
+        when(urlShortenerRepository.save(any(UrlLinker.class))).thenReturn(mockLinker);
+        assertEquals(mockLinker, urlShortenerService.update(new UrlLinker()));
     }
 
     @Test

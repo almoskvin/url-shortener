@@ -27,7 +27,6 @@ public class UrlShortenerRepositoryIntegrationTest {
         linker2 = new UrlLinker("alias2", "link2");
         urlShortenerRepository.save(linker1);
         urlShortenerRepository.save(linker2);
-
     }
 
     @Test
