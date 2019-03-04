@@ -94,7 +94,7 @@ If successful, the response will look like:
      "alias":"http://localhost:8080/358ee832",
      "analytics":
      {
-        "createdDate":"2019-03-04T12:39:52.878+0000",
+        "created":"2019-03-04T12:39:52.878+0000",
         "followedTimes":0,
         "lastTimeFollowed":null
      },

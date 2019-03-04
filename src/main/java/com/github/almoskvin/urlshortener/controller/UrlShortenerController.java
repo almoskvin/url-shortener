@@ -27,9 +27,9 @@ public class UrlShortenerController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(UrlShortenerController.class);
 
-    private static final String DEFAULT_INSTANCE_URL = "http://localhost:8080/";
-    private static final String PROJECTION_FULL = "FULL";
-    private static final String PROJECTION_NONE = "NONE";
+    static final String DEFAULT_INSTANCE_URL = "http://localhost:8080/";
+    static final String PROJECTION_FULL = "FULL";
+    static final String PROJECTION_NONE = "NONE";
 
     private final UrlShortenerService urlShortenerService;
 
