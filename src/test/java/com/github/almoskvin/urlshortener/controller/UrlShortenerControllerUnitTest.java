@@ -3,26 +3,25 @@ package com.github.almoskvin.urlshortener.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.almoskvin.urlshortener.model.UrlLinker;
 import com.github.almoskvin.urlshortener.service.UrlShortenerService;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@RunWith(SpringJUnit4ClassRunner.class)
+
 @WebMvcTest(value = UrlShortenerController.class)
 public class UrlShortenerControllerUnitTest {
 
@@ -36,7 +35,7 @@ public class UrlShortenerControllerUnitTest {
     private UrlLinker savedMockLinker;
     private UrlLinker filledMockLinker;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         newMockLinker = new UrlLinker("https://valid.link/");
         //after initial save
@@ -84,7 +83,7 @@ public class UrlShortenerControllerUnitTest {
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
 
-        verifyZeroInteractions(urlShortenerService);
+        verifyNoInteractions(urlShortenerService);
     }
 
     @Test

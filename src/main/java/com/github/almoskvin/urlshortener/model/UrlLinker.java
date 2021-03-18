@@ -5,7 +5,6 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import javax.validation.constraints.NotNull;
 import java.util.Date;
 
 @Document
@@ -23,7 +22,6 @@ public class UrlLinker {
     /**
      * Original link (long URL)
      */
-    @NotNull(message = "URL must not be null")
     private String link;
 
     @CreatedDate
@@ -43,7 +41,7 @@ public class UrlLinker {
         this.followedTimesCounter = 0;
     }
 
-    public UrlLinker(@NotNull(message = "URL must not be null") String link) {
+    public UrlLinker(String link) {
         this.link = link;
         this.followedTimesCounter = 0;
     }

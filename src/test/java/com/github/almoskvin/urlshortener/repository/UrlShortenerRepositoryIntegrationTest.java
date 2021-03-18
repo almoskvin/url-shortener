@@ -1,17 +1,18 @@
 package com.github.almoskvin.urlshortener.repository;
 
 import com.github.almoskvin.urlshortener.model.UrlLinker;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-@RunWith(SpringRunner.class)
+
+@ExtendWith(SpringExtension.class)
 @DataMongoTest
 public class UrlShortenerRepositoryIntegrationTest {
 
@@ -21,7 +22,7 @@ public class UrlShortenerRepositoryIntegrationTest {
     private UrlLinker linker1;
     private UrlLinker linker2;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         linker1 = new UrlLinker("alias1", "link1");
         linker2 = new UrlLinker("alias2", "link2");
@@ -54,7 +55,7 @@ public class UrlShortenerRepositoryIntegrationTest {
         assertNotNull(urlShortenerRepository.findByAlias("alias1"));
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         urlShortenerRepository.delete(linker1);
         urlShortenerRepository.delete(linker2);
