@@ -1,0 +1,22 @@
+version: "3.7"
+
+services:
+  app:
+    container_name: url-shortener-app
+    build: .
+    ports:
+      - 8080:8080
+    depends_on:
+      - mongo
+    networks:
+      - local
+  mongo:
+    image: mongo:4.0.0
+    container_name: url-shortener-mongo
+    ports:
+      - 27017:27017
+    networks:
+      - local
+networks:
+  local:
+    driver: bridge

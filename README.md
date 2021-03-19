@@ -18,8 +18,6 @@ If there is no MongoDB instance available, the Docker image can be pulled and ru
     docker pull mongo && \
     docker run --rm --user mongodb -p 27017:27017 --name url-shortener-mongo mongo    
 
-*The mentioned `docker run` configuration must be used for dev&test purposes only!*
-
 URL of a current application instance must be specified as well (`http://localhost:8080/` by default):
 
     #instance
@@ -28,6 +26,7 @@ URL of a current application instance must be specified as well (`http://localho
 For example, if the application runs with a property `instance.url=https://your.in/`, then it will generate short URLs like this `https://your.in/3h4jhg5k`
 
 ## Running
+### Run app as a separate container
 Presentation image of this project (generates short links for `http://localhost:8080/`) is available on DockerHub <https://cloud.docker.com/repository/docker/esquire/url-shortener/>.<br>
 This image must be run only linked with a MongoDB container.
 
@@ -40,6 +39,10 @@ Following commands are sufficient for running the project successfully:
     docker run --rm -p 8080:8080 --name url-shortener --link=url-shortener-mongo esquire/url-shortener
 
 It is important to mention that the published image is not ready for a production environment. For production level, there are things which need to be configured thoroughly.
+### Run app using docker-compose
+It is possible to use provided `docker-compose.yml` file by running the command below in the root folder of the project:
+
+    docker-compose up --build
 
 ## Actions
 ### Create
