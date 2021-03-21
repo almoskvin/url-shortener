@@ -1,0 +1,58 @@
+### Create
+POST {{host}}/api/v1/urlLinker
+Content-Type: application/json
+
+{
+  "link": "https://duckduckgo.com/?q=anchorage+daily+news"
+}
+
+> {%
+client.test("Request executed successfully", function() {
+  client.assert(response.status === 200, "Response status is not 200");
+  client.assert(response.body != null, "Response body is null");
+  client.assert(response.body.alias != null, "Alias is null");
+  client.assert(response.body.link === "https://duckduckgo.com/?q=anchorage+daily+news", "Response link is not the link from request");
+});
+client.global.set("shortUrl", response.body.alias);
+%}
+
+### Redirect
+GET {{shortUrl}}
+
+### Expand
+GET {{host}}/api/v1/urlLinker?alias={{shortUrl}}
+
+> {%
+client.test("Request executed successfully", function() {
+  client.assert(response.status === 200, "Response status is not 200");
+  client.assert(response.body != null, "Response body is null");
+  client.assert(response.body.link != null, "Link is null");
+  client.assert(response.body.alias === client.global.get("shortUrl"), "Response alias is not the alias from request");
+});
+%}
+
+### Expand with metrics
+GET {{host}}/api/v1/urlLinker?alias={{shortUrl}}&projection=FULL
+
+> {%
+client.test("Request executed successfully", function() {
+  client.assert(response.status === 200, "Response status is not 200");
+  client.assert(response.body != null, "Response body is null");
+  client.assert(response.body.analytics != null, "Analytics is null");
+  client.assert(response.body.analytics.created != null, "Analytics is null");
+  client.assert(response.body.analytics.followedTimes != null, "Analytics is null");
+  client.assert(response.body.analytics.lastTimeFollowed != null, "Analytics is null");
+});
+%}
+
+### Delete
+DELETE {{host}}/api/v1/urlLinker?alias={{shortUrl}}
+
+> {%
+client.test("Request executed successfully", function() {
+  client.assert(response.status === 200, "Response status is not 200");
+});
+%}
+
+###
+

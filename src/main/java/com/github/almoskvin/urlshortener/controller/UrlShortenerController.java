@@ -103,7 +103,7 @@ public class UrlShortenerController {
             analyticsMap.put("followedTimes", linker.getFollowedTimesCounter());
             responseMap.put("analytics", analyticsMap);
         }
-        return new ResponseEntity<>(responseMap, HttpStatus.FOUND);
+        return new ResponseEntity<>(responseMap, HttpStatus.OK);
     }
 
     @DeleteMapping("/api/v1/urlLinker")
